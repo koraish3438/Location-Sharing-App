@@ -14,36 +14,38 @@ class LocationViewModel(application: Application): AndroidViewModel(application)
     fun initClient(client: FusedLocationProviderClient) {
         fusedLocationClient = client
     }
-    
+
     fun getLastLocation(callback: (Double?, Double?) -> Unit) {
         try {
-            fusedLocationClient?.let { client ->
-                val context = getApplication<Application>().applicationContext
-                if (ActivityCompat.checkSelfPermission(
-                        context,
-                        Manifest.permission.ACCESS_FINE_LOCATION
-                    ) != PackageManager.PERMISSION_GRANTED &&
-                    ActivityCompat.checkSelfPermission(
-                        context,
-                        Manifest.permission.ACCESS_COARSE_LOCATION
-                    ) != PackageManager.PERMISSION_GRANTED
-                ) {
-                    callback(null, null)
-                    return
-                }
+            val client = fusedLocationClient ?: run {
+                callback(null, null)
+                return
+            }
 
-                client.lastLocation.addOnCompleteListener { task ->
-                    if (task.isSuccessful && task.result != null) {
-                        val lastLocation = task.result
-                        callback(lastLocation.latitude, lastLocation.longitude)
-                    } else {
-                        callback(null, null)
-                    }
+            val context = getApplication<Application>().applicationContext
+            if (ActivityCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.ACCESS_FINE_LOCATION
+                ) != PackageManager.PERMISSION_GRANTED &&
+                ActivityCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                callback(null, null)
+                return
+            }
+
+            client.lastLocation.addOnCompleteListener { task ->
+                if (task.isSuccessful && task.result != null) {
+                    val location = task.result
+                    callback(location.latitude, location.longitude)
+                } else {
+                    callback(null, null)
                 }
-            } ?: callback(null, null)
+            }
         } catch (e: SecurityException) {
             callback(null, null)
         }
     }
-
 }

@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
 import com.example.locationsharingapp.R
 import com.example.locationsharingapp.databinding.ActivityGoogleMapBinding
+import com.example.locationsharingapp.model.AppUser
 import com.example.locationsharingapp.viewmodel.FirestoreViewModel
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -35,22 +36,20 @@ class GoogleMapActivity : AppCompatActivity(), OnMapReadyCallback {
         googleMap = map
 
         fireStoreViewModel.getAllUsers { userList ->
-            for (user in userList) {
-                if (user.latitude != null && user.longitude != null) {
-                    val latLng = LatLng(user.latitude, user.longitude)
-                    val markerOption = MarkerOptions()
-                        .position(latLng)
-                        .title("${user.displayName}\n${user.userEmail}")
-                    googleMap.addMarker(markerOption)
-                }
+            val validUsers: List<AppUser> = userList.filter { it.latitude != null && it.longitude != null }
+
+            for (user in validUsers) {
+                val latLng = LatLng(user.latitude!!, user.longitude!!)
+                val markerOption = MarkerOptions()
+                    .position(latLng)
+                    .title("${user.displayName}\n${user.userEmail}")
+                googleMap.addMarker(markerOption)
             }
 
-            if (userList.isNotEmpty()) {
-                val firstUser = userList[0]
-                if (firstUser.latitude != null && firstUser.longitude != null) {
-                    val firstLatLng = LatLng(firstUser.latitude, firstUser.longitude)
-                    googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(firstLatLng, 10f))
-                }
+            if (validUsers.isNotEmpty()) {
+                val firstUser = validUsers[0]
+                val firstLatLng = LatLng(firstUser.latitude!!, firstUser.longitude!!)
+                googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(firstLatLng, 10f))
             }
         }
     }

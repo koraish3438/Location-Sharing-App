@@ -15,6 +15,7 @@ import com.example.locationsharingapp.model.AppUser
 import com.example.locationsharingapp.viewmodel.AuthViewModel
 import com.example.locationsharingapp.viewmodel.FirestoreViewModel
 import com.example.locationsharingapp.viewmodel.LocationViewModel
+import com.google.android.gms.location.LocationServices
 import com.google.firebase.auth.FirebaseAuth
 
 class FriendListActivity : AppCompatActivity() {
@@ -40,6 +41,10 @@ class FriendListActivity : AppCompatActivity() {
         binding = ActivityFriendListBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        // Init FusedLocationProviderClient
+        val fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+        locationViewModel.initClient(fusedLocationClient)
+
         if (FirebaseAuth.getInstance().currentUser == null) {
             startActivity(Intent(this, SignInActivity::class.java))
             finish()
@@ -49,6 +54,11 @@ class FriendListActivity : AppCompatActivity() {
         setupDrawer()
         setupRecyclerView()
         checkLocationPermission()
+
+        // Floating Action Button to update location
+        binding.mapBtn.setOnClickListener {
+            startActivity(Intent(this, GoogleMapActivity::class.java))
+        }
     }
 
     private fun setupDrawer() {
@@ -98,6 +108,14 @@ class FriendListActivity : AppCompatActivity() {
             val userId = authViewModel.getCurrentUserId()
             if (!userId.isNullOrEmpty() && latitude != null && longitude != null) {
                 fireStoreViewModel.updateUserLocation(userId, latitude, longitude)
+                Toast.makeText(this, "Location updated", Toast.LENGTH_SHORT).show()
+
+                // Refresh friend list after location update
+                fireStoreViewModel.getAllUsers { users ->
+                    userAdapter.updateData(users)
+                }
+            } else {
+                Toast.makeText(this, "Location not available", Toast.LENGTH_SHORT).show()
             }
         }
     }
